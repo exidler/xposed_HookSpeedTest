@@ -11,6 +11,8 @@ import android.widget.Toast;
 import java.util.Arrays;
 
 public class MyActivity extends Activity {
+	private static final String TAG = "XposedTest";
+
 	/**
 	 * Called when the activity is first created.
 	 */
@@ -46,7 +48,7 @@ public class MyActivity extends Activity {
 					c2 += calcMethodHooked(i, args);
 					c3 += calcMethodHookedFast(i, args);
 				}
-				Log.d("Xposed", String.format("Warm up results: %s %s %s", c1, c2, c3));
+				Log.d(TAG, String.format("Warm up results: %s %s %s", c1, c2, c3));
 
 				c1 = 0;
 				c2 = 0;
@@ -55,17 +57,17 @@ public class MyActivity extends Activity {
 					long t1 = SystemClock.currentThreadTimeMicro();
 					for (int i = 0; i < STEPS; i++) c1 += calcMethod(i, args);
 					t1time[j] = SystemClock.currentThreadTimeMicro() - t1;
-					Log.d("Xposed", String.format("t1.%s=%s res=%s", j, t1time[j], c1));
+					Log.d(TAG, String.format("t1.%s=%s res=%s", j, t1time[j], c1));
 
 					t1 = SystemClock.currentThreadTimeMicro();
 					for (int i = 0; i < STEPS; i++) c2 += calcMethodHooked(i, args);
 					t2time[j] = SystemClock.currentThreadTimeMicro() - t1;
-					Log.d("Xposed", String.format("t2.%s=%s res=%s", j, t2time[j], c2));
+					Log.d(TAG, String.format("t2.%s=%s res=%s", j, t2time[j], c2));
 
 					t1 = SystemClock.currentThreadTimeMicro();
 					for (int i = 0; i < STEPS; i++) c3 += calcMethodHookedFast(i, args);
 					t3time[j] = SystemClock.currentThreadTimeMicro() - t1;
-					Log.d("Xposed", String.format("t3.%s=%s res=%s", j, t3time[j], c3));
+					Log.d(TAG, String.format("t3.%s=%s res=%s", j, t3time[j], c3));
 				}
 
 				Arrays.sort(t1time);
@@ -81,29 +83,32 @@ public class MyActivity extends Activity {
 					t3 += t3time[i];
 				}
 
-				final long t1time = t1 / (TESTS - 2 * TESTS_FILTER);
-				final long t2time = t2 / (TESTS - 2 * TESTS_FILTER);
-				final long t3time = t3 / (TESTS - 2 * TESTS_FILTER);
+				long t1time = t1 / (TESTS - 2 * TESTS_FILTER);
+				long t2time = t2 / (TESTS - 2 * TESTS_FILTER);
+				long t3time = t3 / (TESTS - 2 * TESTS_FILTER);
 
-				final int finalC1 = c1;
-				final int finalC2 = c2;
-				final int finalC3 = c3;
+				final String toast = "Result is\n" + c1 + "\n" + c2 + "\n" + c3;
+				final String result = String.format(
+						"\n" +
+						"tDirect=%sus (%.2f per call)\n" +
+						"tHook=%sus (%.2f per call)\n" +
+						"tHookFast=%sus (%.2f per call)\n" +
+						"\nrelative results:\n" +
+						"tHook/tDirect=%.2f\ntFastHook/tDirect=%.2f\ntHook/tFastHook=%.2f",
+						t1time, t1time / (float)STEPS,
+						t2time, t2time / (float)STEPS,
+						t3time, t3time / (float)STEPS,
+						t2time / (float)t1time, t3time / (float)t1time,
+						t2time / (float)t3time);
+				Log.i(TAG, toast);
+				Log.i(TAG, result);
+
 				runOnUiThread(new Runnable() {
 					@Override
 					public void run() {
 						v.setEnabled(true);
-						Toast.makeText(MyActivity.this, "Result is\n" + finalC1 + "\n" + finalC2 + "\n" + finalC3,
-						               Toast.LENGTH_SHORT).show();
-						((TextView)findViewById(R.id.stat)).setText(
-								String.format("tDirect=%sus (%.2f per call)\n" +
-								              "tHook=%sus (%.2f per call)\n" +
-								              "tHookFast=%sus (%.2f per call)\n" +
-								              "\nrelative results:\n" +
-								              "tHook/tDirect=%.2f\ntFastHook/tDirect=%.2f\ntHook/tFastHook=%.2f",
-								              t1time, t1time / (float)STEPS,
-								              t2time, t2time / (float)STEPS,
-								              t3time, t3time / (float)STEPS,
-								              t2time / (float)t1time, t3time / (float)t1time, t2time / (float)t3time));
+						Toast.makeText(MyActivity.this, toast, Toast.LENGTH_SHORT).show();
+						((TextView)findViewById(R.id.stat)).setText(result);
 					}
 				});
 			}
