@@ -20,10 +20,14 @@ public class XposedModule implements IXposedHookLoadPackage {
 				});
 
 
-		XposedTestHelper.getEx().findAndHookFast(
-				"com.exi.rsd.hooktest.MyActivity", lpparam.classLoader, "calcMethodHookedFast",
-				XposedModule.class, "afterCalcHook",
-				int.class, int[].class);
+		try {
+			XposedTestHelper.getEx().findAndHookFast(
+					"com.exi.rsd.hooktest.MyActivity", lpparam.classLoader, "calcMethodHookedFast",
+					XposedModule.class, "afterCalcHook",
+					int.class, int[].class);
+		} catch (Exception ignored) {
+			// special if we have old Xposed
+		}
 	}
 
 	private static int afterCalcHook(int arg, int[] args, Object thiz, int ret) {
